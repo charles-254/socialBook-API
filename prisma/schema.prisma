@@ -18,9 +18,10 @@ model Users {
  firstName String @map("first_name")
  lastName String @map("last_name")
  emailAddress String @unique @map("email_address")
- username String @unique 
+ username String @unique
+ isDeleted Boolean @default(false) @map("is_deleted")
 
- post Posts[]
+ posts Posts[]
 
  @@map("users")
 }

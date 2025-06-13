@@ -11,6 +11,17 @@ app.post("/users", async (req, res) => {
     const { firstName, lastName, emailAddress, username } = req.body
 
     try {
+        const existsingUser = await client.users.findFirst({
+            where: {
+                OR:[
+                    { username: username },
+                    { emailAddress: emailAddress }
+                ]
+            }
+        })
+        if (existsingUser){
+            return res.status(400).json({ message: `User already exists`})
+        }
         const newUser = await client.users.create({
             data: {
                 firstName,
@@ -27,7 +38,11 @@ app.post("/users", async (req, res) => {
 
 app.get("/users", async (_req, res) => {
     try {
-        const allUsers = await client.users.findMany()
+        const allUsers = await client.users.findMany({
+            where: {
+                isDeleted: false
+            }
+        })
         res.status(200).json({ message: `Fetched all users successfully.`, users: allUsers})
     }catch (e) {
         res.status(500).json({ message: `Something went wrong`})
@@ -40,9 +55,13 @@ app.get("/users/:id", async (req, res) => {
     try {
         const userInfo = await client.users.findFirst({
             where: {
-                id 
+                AND:[
+                    { id: id },
+                    { isDeleted: false}
+                ]
             }
         })
+
         if (userInfo) {
             res.status(200).json({ message: `Fetched user successfully.`, user: userInfo})
         }else {
@@ -50,9 +69,73 @@ app.get("/users/:id", async (req, res) => {
         }
 
     }catch (e) {
-        res.status(500).json({ message: `Something went wrong`})
+        res.status(500).json({ message: `Something went wrong.`})
     }
 })
+
+app.delete("/users/:id", async (req, res) => {
+    const { id } = req.params
+
+    try {
+        const userInfo = await client.users.update({
+            where:{
+                id
+            },
+            data:{
+                isDeleted: true
+            }
+        })
+        const userPosts = await client.posts.updateMany({
+            where: {
+                user_id: id
+            },
+            data: {
+                isDeleted: true
+            }
+        })
+        if (userInfo) {
+            res.status(200).json({ message: `User and related posts successfully deleted.`})
+        }else {
+            res.status(400).json({ message: `user not found.`})
+        }
+    }catch (e) {
+        res.status(500).json({ message: `Something went wrong.`})
+    }
+})
+
+app.put("users/:id", async (req, res) => {
+    const { id } = req.params
+    const { firstName, lastName, emailAddress, username } = req.body
+
+    try {
+        const existsingUser = await client.users.findFirst({
+            where: {
+                OR:[
+                    { emailAddress: emailAddress },
+                    { username: username }
+                ]
+            }
+        })
+        if (existsingUser) {
+            return res.status(400).json({ message: `User with email address ${emailAddress} OR username ${username} already esists.`})
+        }
+        const userInfo = await client.users.update({
+            where:{
+                id
+            },
+            data: {
+                firstName: firstName && firstName,
+                lastName: lastName && lastName,
+                emailAddress: emailAddress && emailAddress,
+                username: username && username
+            }
+        })
+
+    }catch (e) {
+        res.status(500).json({ message: `Something went wrong.`})
+    }
+})
+
 
 app.post("/posts", async (req, res) => {
     const { title, content, userId } = req.body
@@ -103,7 +186,28 @@ app.get("/posts/:id", async (req, res) => {
         res.status(200).json({ message: `Fetched post successfully.`, post: postInfo})
 
     }catch (e) {
-        res.status(500).json({ message: `Something went wrong`})
+        res.status(500).json({ message: `Something went wrong.`})
+    }
+})
+
+app.get("/users/:id/posts", async (req, res) => {
+    const { id } = req.params
+    try {
+        const userPosts = await client.posts.findMany({
+            where: {
+                AND: [
+                    { user_id: id },
+                    { isDeleted: false}
+                ]
+            }
+        })
+        if (userPosts) {
+            res.status(200).json({ message: `Fetched all user posts`, userPosts})
+        }else {
+            res.status(404).json({ message: `User not found.`})
+        }
+    }catch (e) {
+        res.status(500).json({ message: `Something went wrong.`})
     }
 })
 
@@ -122,10 +226,10 @@ app.delete("/posts/:id", async (req, res) => {
         if (postInfo) {
             res.status(200).json({ message: `Post successfully deleted.`})
         }else {
-            res.status(404).json({ message: `Post not found`})
+            res.status(404).json({ message: `Post not found.`})
         }
     }catch (e) {
-        res.status(500).json({ message: `Something went wrong`})
+        res.status(500).json({ message: `Something went wrong.`})
     }
 })
 
@@ -148,7 +252,7 @@ app.put("/posts/:id", async (req, res) => {
             res.status(400).json({ message: `Post not found.`})
         }
     }catch (e) {
-        res.status(500).json({ message : `Something went wrong`})
+        res.status(500).json({ message : `Something went wrong.`})
     }
 })
 
