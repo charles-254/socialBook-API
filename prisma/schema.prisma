@@ -44,7 +44,7 @@ model Posts {
 }
 
 model Comments {
-  id String @id  @default(uuid()) @map("comment_id")
+  id Int @id  @default(autoincrement()) @map("comment_id")
   content String @map("comment_content")
   createdAt DateTime @default(now()) @map("created_at")
   lastUpdated DateTime @updatedAt @map("last_updated")

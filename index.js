@@ -5,7 +5,7 @@ const client = new PrismaClient();
 const app = express()
 app.use(express.json())
 
-
+// Create user
 app.post("/users", async (req, res) => {
     console.log(req.body)
     const { firstName, lastName, emailAddress, username } = req.body
@@ -20,7 +20,7 @@ app.post("/users", async (req, res) => {
             }
         })
         if (existsingUser){
-            return res.status(400).json({ message: `User already exists`})
+            return res.status(409).json({ message: `User already exists`})
         }
         const newUser = await client.users.create({
             data: {
@@ -36,6 +36,7 @@ app.post("/users", async (req, res) => {
     }
 })
 
+// fetch all users
 app.get("/users", async (_req, res) => {
     try {
         const allUsers = await client.users.findMany({
@@ -49,6 +50,7 @@ app.get("/users", async (_req, res) => {
     }
 })
 
+// Fetch specific user
 app.get("/users/:id", async (req, res) => {
     const { id } = req.params
 
@@ -73,6 +75,7 @@ app.get("/users/:id", async (req, res) => {
     }
 })
 
+// Delete user
 app.delete("/users/:id", async (req, res) => {
     const { id } = req.params
 
@@ -96,13 +99,14 @@ app.delete("/users/:id", async (req, res) => {
         if (userInfo) {
             res.status(200).json({ message: `User and related posts successfully deleted.`})
         }else {
-            res.status(400).json({ message: `user not found.`})
+            res.status(404).json({ message: `user not found.`})
         }
     }catch (e) {
         res.status(500).json({ message: `Something went wrong.`})
     }
 })
 
+// Update user
 app.put("users/:id", async (req, res) => {
     const { id } = req.params
     const { firstName, lastName, emailAddress, username } = req.body
@@ -117,7 +121,7 @@ app.put("users/:id", async (req, res) => {
             }
         })
         if (existsingUser) {
-            return res.status(400).json({ message: `User with email address ${emailAddress} OR username ${username} already esists.`})
+            return res.status(409).json({ message: `User with email address ${emailAddress} OR username ${username} already esists.`})
         }
         const userInfo = await client.users.update({
             where:{
@@ -136,7 +140,7 @@ app.put("users/:id", async (req, res) => {
     }
 })
 
-
+// Create post
 app.post("/posts", async (req, res) => {
     const { title, content, userId } = req.body
 
@@ -155,6 +159,7 @@ app.post("/posts", async (req, res) => {
     }
 })
 
+// Fetch all posts
 app.get("/posts", async (_req, res) => {
     try {
         const allPosts = await client.posts.findMany({
@@ -171,6 +176,7 @@ app.get("/posts", async (_req, res) => {
     }
 })
 
+// Fetch specific post 
 app.get("/posts/:id", async (req, res) => {
     const { id } = req.params
 
@@ -190,6 +196,7 @@ app.get("/posts/:id", async (req, res) => {
     }
 })
 
+// Fetch all posts for a specific user
 app.get("/users/:id/posts", async (req, res) => {
     const { id } = req.params
     try {
@@ -211,6 +218,7 @@ app.get("/users/:id/posts", async (req, res) => {
     }
 })
 
+// Delete specific post
 app.delete("/posts/:id", async (req, res) => {
     const { id } = req.params
 
@@ -233,6 +241,7 @@ app.delete("/posts/:id", async (req, res) => {
     }
 })
 
+// Update posts
 app.put("/posts/:id", async (req, res) => {
     const { id } = req.params
     const { title, content } = req.body
@@ -256,9 +265,202 @@ app.put("/posts/:id", async (req, res) => {
     }
 })
 
+// Create comment
+app.post("/posts/:id/comments", async (req, res) => {
+    const { postId } = req.params
+    const { content, authorId } = req.body
+
+    try {
+        const newComment = await client.comments.create({
+            data: {
+                content,
+                authorId,
+                postId
+            }
+        })
+        if (newComment) {
+            res.status(201).json({ message: `Comment made successfully.`, comment: newComment})
+        }else {
+            res.status(400).json({ message: `Comment not made, please try again.`})
+        }
+    }catch (e) {
+        res.status(500).json({ message: `Something went wrong.`})
+    }
+})
+
+// Fetch all comments 
+app.get("/comments", async (_req, res) => {
+    try {
+        const allComments = await client.comments.findMany({
+            where: {
+                isDeleted: false
+            }
+        })
+        res.status(200).json({ message: `Fetched all comments.`, comments: allComments})
+    }catch (e) {
+        res.status(500).json({ message: `Something went wrong.`})
+    }
+})
+
+//Fetch specific comment
+app.get("/comments/:id", async (req, res) => {
+    const { id } = req.params
+
+    try {
+        const comment = await client.comments.findFirst({
+            where: {
+                AND: [
+                    { id: +id },
+                    { isDeleted: false }
+                ]
+            }
+        })
+        if (comment) {
+            res.status(200).json({ message: `Fetched comment succesfully.`, comment: comment})
+        }
+    }catch (e) {
+        res.status(500).json({ message: `Somethign went wrong.`})
+    }
+})
+
+//Fetch all comments made on a post
+app.get("/posts/:id/Comments", async (req, res) => {
+    const { id } = req.params
+    
+    try {
+        const postComments = await client.comments.findMany({
+            where:{
+                AND: [
+                    { postId: id },
+                    { isDeleted: false }
+                ]
+            }
+        })
+        if (postComments) {
+            res.status(200).json({ message: `Fetched all comments for the post.`, comments: postComments})
+        }else {
+            res.status(404).json({ message: `Post not found.`})
+        }
+    }catch (e) {
+        res.status(500).json({ message: `Something went wrong.`})
+    }
+})
+
+//Fetch all comments that a specific user has made
+app.get("/users/:id/comments", async (req, res) => {
+    const { id }  = req.params
+
+    try {
+        const userComments = await client.comments.findMany({
+            where: {
+                AND: [
+                    { authorId: id },
+                    { isDeleted: false }
+                ]
+            }
+        })
+        if (userComments) {
+            res.status(200).json({ message: `Fetched all user comments.`, comments: userComments})
+        }else {
+            res.status(404).json({ message: `User not found.`})
+        }
+    }catch (e) {
+        res.status(500).json({ message: `Something went wrong.`})
+    }
+})
+
+//Fetch all posts of a specific user and the related comments
+app.get("/users/:id/posts/comments", async (req, res) => {
+    const { id } = req.params
+
+    try {
+        const exists = await client.users.findFirst({
+            where: {
+                AND: [
+                    { id: id },
+                    { isDeleted: false}
+                ]
+            }
+        })
+        if (!exists) {
+            return res.status(404).json({ message: `User not found.`})
+        }
+
+        const userPostsAndComments = await client.posts.findMany({
+            where: {
+                AND: [
+                    { user_id: id },
+                    { isDeleted: false}
+                ]
+            },
+            include: {
+                comments
+            }
+        })
+        if (userPostsAndComments) {
+            res.status(200).json({ message: `Fetched all posts and related comments.`, posts: userPostsAndComments})
+        }else {
+            res.status(404).json({ message: `User posts not found.`})
+        }
+    }catch (e) {
+        res.status(500).json({ message: `Something went wrong.`})
+    }
+})
+
+//Update comment 
+app.put("/comments/:id", async (req, res) => {
+    const { id } = req.params
+    const { content } = req.body
+
+    try {
+        const comment = await client.comments.update({
+            where: {
+                AND: [
+                    { id: +id },
+                    { isDeleted: false }
+                ]
+            },
+            data: {
+                content: content && content
+            }
+        })
+        if (comment) {
+            res.status(200).json({ message: `Comment updated successfully.`, comment: comment})
+        } else {
+            return res.status(404).json({ message: `Comment not found.`})
+        }
+        
+    }catch (e) {
+        res.status(500).json({ message: `Something went wrong.`})
+    }
+})
+
+// Delete comment
+app.delete("/comments/:id", async (req, res) => {
+    const { id } = req.params
+
+    try {
+        const comment = await client.comments.update({
+            where: {
+                id
+            },
+            data: {
+                isDeleted: true
+            }
+        })
+        if(comment) {
+            res.status(200).json({ message: `Comment deleted successfully.`})
+        }else {
+            res.status(404).json({ message: `Comment not found.`})
+        }
+
+    }catch (e) {
+        res.status(500).json({ message: `Something went wrong.`})
+    }
+})
+
 const port = process.env.PORT || 4000
 
 app.listen(port, () => {
     console.log(`Server up and listening on port ${port}`)
 })
-
