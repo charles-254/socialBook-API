@@ -12,12 +12,6 @@ This is a simple RESTful API built using Express.js and Prisma ORM. It allows yo
 ### POST /users
 
 Create a new user.
-
-![](./images/post-user.png)
-
-### GET /users
-Fetch all users.
-
 Request body.
 
 ```json
@@ -28,6 +22,11 @@ Request body.
     "username": "snowman254"
 }
 ```
+
+![](./images/post-user.png)
+
+### GET /users
+Fetch all users.
 
 ![](./images/fetch-all-users.png)
 
