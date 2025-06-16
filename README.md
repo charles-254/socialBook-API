@@ -62,10 +62,9 @@ Fetch specific post
 ### PUT /posts/:id
 Update specific post
 
-We can either update the post title or content or both is needed
+We can either update the post title or content or both if needed.
 
 updating the title
 
 ![](./images/update-post.png)
 
-# **_HAVE FUN!_**
