@@ -7,7 +7,6 @@ app.use(express.json())
 
 
 app.post("/users", async (req, res) => {
-    console.log(req.body)
     const { firstName, lastName, emailAddress, username } = req.body
 
     try {
