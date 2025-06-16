@@ -104,13 +104,20 @@ app.get("/posts/:id", async (req, res) => {
     try {
         const postInfo = await client.posts.findFirst({
             where: {
-                id
+                AND: [
+                    { id },
+                    { isDeleted: false }
+                ]
             },
             include:{
                 user: true
             }
         })
-        res.status(200).json({ message: `Fetched post successfully.`, post: postInfo})
+        if (postInfo) {
+            res.status(200).json({ message: `Fetched post successfully.`, post: postInfo})
+        }else {
+            res.status(404).json({ message: `Post not found`})
+        }
 
     }catch (e) {
         res.status(500).json({ message: `Something went wrong`})
