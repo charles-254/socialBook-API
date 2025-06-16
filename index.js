@@ -5,7 +5,9 @@ const client = new PrismaClient();
 const app = express()
 app.use(express.json())
 
-
+app.get("/", (_req, res) => {
+    res.send("<h1> Welcome to my social book API.</h1>")
+})
 app.post("/users", async (req, res) => {
     const { firstName, lastName, emailAddress, username } = req.body
 
@@ -37,8 +39,12 @@ app.post("/users", async (req, res) => {
 
 app.get("/users", async (_req, res) => {
     try {
-        const allUsers = await client.users.findMany()
-        res.status(200).json({ message: `Fetched all users successfully.`, users: allUsers})
+        const allUsers = await client.users.findMany({
+            include: {
+                post : true
+            }
+        })
+        res.status(200).json({ message: `Fetched all users and related posts successfully.`, users: allUsers})
     }catch (e) {
         res.status(500).json({ message: `Something went wrong`})
     }
@@ -51,6 +57,9 @@ app.get("/users/:id", async (req, res) => {
         const userInfo = await client.users.findFirst({
             where: {
                 id 
+            },
+            include: {
+                post: true
             }
         })
         if (userInfo) {

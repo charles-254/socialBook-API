@@ -26,12 +26,16 @@ Request body.
 ![](./images/post-user.png)
 
 ### GET /users
-Fetch all users.
+Fetch all users along will their posts.
+
+sample of the expected results.
 
 ![](./images/fetch-all-users.png)
 
 ### GET /users/:id
-Fetch a specific user.
+Fetch a specific user along with their posts.
+
+sample of the expected results.
 
 ![](./images/fetch-specific-user.png)
 
@@ -50,19 +54,25 @@ Request body:
 ![](./images/create-post.png)
 
 ### GET /posts
-Fetch all posts
+Fetch all posts along with the users who owns the posts.
+
+sample of the expected results.
 
 ![](./images/fetch-all-posts.png)
 
 ### GET /posts/:id
-Fetch specific post
+Fetch specific post along with the user who owns the post.
+
+sample of the expected results.
 
 ![](./images/fetch-specific-post.png)
 
 ### PUT /posts/:id
-Update specific post
+Update specific post.
 
 We can either update the post title or content or both if needed.
+
+for example:
 
 updating the title
 
