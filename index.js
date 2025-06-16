@@ -11,6 +11,17 @@ app.post("/users", async (req, res) => {
     const { firstName, lastName, emailAddress, username } = req.body
 
     try {
+        const exists = await client.users.findFirst({
+            where: {
+                OR: [
+                    { emailAddress },
+                    { username }
+                ]
+            }
+        })
+        if (exists) {
+            return res.status(409).json({ message: `User already exists.`})
+        }
         const newUser = await client.users.create({
             data: {
                 firstName,
